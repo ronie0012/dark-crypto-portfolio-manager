@@ -13,6 +13,7 @@ const menuItems = [
   { name: "Portfolio", href: "/portfolio" },
   { name: "Markets", href: "/markets" },
   { name: "Analytics", href: "/analytics" },
+  { name: "Chat", href: "/chat" },
   { name: "Settings", href: "#" },
 ];
 

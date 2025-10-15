@@ -2,11 +2,32 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Activity, PieChart as PieChartIcon, BarChart3 } from "lucide-react";
+
+
+import { TrendingUp, TrendingDown, Activity, PieChart as PieChartIcon, BarChart3 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Header from "@/components/Header";
+import { AnalyticsSkeleton } from "@/components/AnalyticsSkeleton";
+import {
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  LineChart as RechartsLineChart,
+  Line,
+  Area,
+  AreaChart,
+  ComposedChart
+} from "recharts";
 
 interface Holding {
   id: number;
@@ -41,6 +62,7 @@ export default function AnalyticsPage() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (!isPending && !session?.user) {
@@ -54,9 +76,13 @@ export default function AnalyticsPage() {
     }
   }, [session]);
 
-  const fetchData = async () => {
+  const fetchData = async (showRefreshToast = false) => {
     try {
-      setIsLoading(true);
+      if (showRefreshToast) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       const token = localStorage.getItem("bearer_token");
       const [holdingsRes, transactionsRes] = await Promise.all([
         fetch(`/api/holdings?userId=${session?.user?.id}`, {
@@ -66,33 +92,37 @@ export default function AnalyticsPage() {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
-      
+
       const holdingsData = await holdingsRes.json();
       const transactionsData = await transactionsRes.json();
-      
+
       // Fetch real-time prices for all holdings
       if (holdingsData.length > 0) {
         const symbols = holdingsData.map((h: Holding) => h.cryptoSymbol.toLowerCase()).join(',');
         const pricesRes = await fetch(`/api/coingecko/prices?ids=${symbols}`);
         const prices = await pricesRes.json();
-        
+
         // Update holdings with real-time prices
         const updatedHoldings = holdingsData.map((h: Holding) => ({
           ...h,
           currentPrice: prices[h.cryptoSymbol.toLowerCase()]?.usd || h.currentPrice,
         }));
-        
+
         setHoldings(updatedHoldings);
+        if (showRefreshToast) {
+          toast.success("Analytics data refreshed");
+        }
       } else {
         setHoldings(holdingsData);
       }
-      
+
       setTransactions(transactionsData);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to fetch analytics data");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -101,23 +131,44 @@ export default function AnalyticsPage() {
     const currentValue = holdings.reduce((sum, h) => sum + (h.amount * h.currentPrice), 0);
     const profitLoss = currentValue - totalInvested;
     const profitLossPercent = totalInvested > 0 ? (profitLoss / totalInvested) * 100 : 0;
-    
+
     const totalBuyVolume = transactions
       .filter(t => t.transactionType === "buy")
       .reduce((sum, t) => sum + t.totalValue, 0);
-    
+
     const totalSellVolume = transactions
       .filter(t => t.transactionType === "sell")
       .reduce((sum, t) => sum + t.totalValue, 0);
-    
-    return { 
-      totalInvested, 
-      currentValue, 
-      profitLoss, 
+
+    // Calculate additional metrics
+    const bestPerformer = holdings.length > 0 ? holdings.reduce((best, current) => {
+      const currentROI = ((current.amount * current.currentPrice) - current.totalInvested) / current.totalInvested * 100;
+      const bestROI = ((best.amount * best.currentPrice) - best.totalInvested) / best.totalInvested * 100;
+      return currentROI > bestROI ? current : best;
+    }) : null;
+
+    const worstPerformer = holdings.length > 0 ? holdings.reduce((worst, current) => {
+      const currentROI = ((current.amount * current.currentPrice) - current.totalInvested) / current.totalInvested * 100;
+      const worstROI = ((worst.amount * worst.currentPrice) - worst.totalInvested) / worst.totalInvested * 100;
+      return currentROI < worstROI ? current : worst;
+    }) : null;
+
+    const avgHoldingValue = holdings.length > 0 ? currentValue / holdings.length : 0;
+    const diversificationScore = holdings.length > 0 ? Math.min(holdings.length * 20, 100) : 0;
+
+    return {
+      totalInvested,
+      currentValue,
+      profitLoss,
       profitLossPercent,
       totalBuyVolume,
       totalSellVolume,
-      transactionCount: transactions.length
+      transactionCount: transactions.length,
+      bestPerformer,
+      worstPerformer,
+      avgHoldingValue,
+      diversificationScore,
+      holdingsCount: holdings.length
     };
   };
 
@@ -126,25 +177,46 @@ export default function AnalyticsPage() {
   const portfolioAllocation = holdings.map(holding => {
     const value = holding.amount * holding.currentPrice;
     const percentage = stats.currentValue > 0 ? (value / stats.currentValue) * 100 : 0;
+    const profitLoss = value - holding.totalInvested;
+    const roi = holding.totalInvested > 0 ? (profitLoss / holding.totalInvested) * 100 : 0;
     return {
       symbol: holding.cryptoSymbol,
       name: holding.cryptoName,
       value,
-      percentage
+      percentage,
+      profitLoss,
+      roi,
+      invested: holding.totalInvested
     };
   }).sort((a, b) => b.value - a.value);
+
+  // Prepare chart data
+  const pieChartData = portfolioAllocation.map((asset, index) => ({
+    name: asset.symbol,
+    value: asset.value,
+    percentage: asset.percentage,
+    color: `hsl(${(index * 137.5) % 360}, 70%, 50%)`,
+  }));
+
+  const performanceChartData = portfolioAllocation.map(asset => ({
+    name: asset.symbol,
+    invested: asset.invested,
+    current: asset.value,
+    profit: asset.profitLoss,
+    roi: asset.roi
+  }));
+
+
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
+
+
 
   if (isPending || isLoading) {
     return (
       <>
         <Header />
-        <div className="min-h-screen bg-background py-24">
-          <div className="container mx-auto px-6">
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          </div>
-        </div>
+        <AnalyticsSkeleton />
       </>
     );
   }
@@ -268,11 +340,10 @@ export default function AnalyticsPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{transaction.cryptoSymbol}</span>
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              transaction.transactionType === "buy" 
-                                ? "bg-green-500/10 text-green-500" 
+                            <span className={`text-xs px-2 py-1 rounded ${transaction.transactionType === "buy"
+                                ? "bg-green-500/10 text-green-500"
                                 : "bg-red-500/10 text-red-500"
-                            }`}>
+                              }`}>
                               {transaction.transactionType.toUpperCase()}
                             </span>
                           </div>

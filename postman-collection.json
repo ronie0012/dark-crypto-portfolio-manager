@@ -1,0 +1,184 @@
+{
+  "info": {
+    "_postman_id": "crypto-chat-collection",
+    "name": "🚀 Crypto Portfolio Chat API",
+    "description": "Complete test collection for the real-time chat feature",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🧪 Test API Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}{{apiPath}}/test",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{apiPath}}", "test"]
+        },
+        "description": "Quick test to verify the API is running"
+      },
+      "response": []
+    },
+    {
+      "name": "📥 Get Messages",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}{{apiPath}}?userId={{testUserId}}&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{apiPath}}"],
+          "query": [
+            {
+              "key": "userId",
+              "value": "{{testUserId}}",
+              "description": "User ID to fetch messages for"
+            },
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Number of messages to fetch"
+            }
+          ]
+        },
+        "description": "Fetch recent chat messages"
+      },
+      "response": []
+    },
+    {
+      "name": "📤 Send Message",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{testUserId}}\",\n  \"username\": \"{{testUsername}}\",\n  \"message\": \"Hello from Postman! Testing at {{$timestamp}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}{{apiPath}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{apiPath}}"]
+        },
+        "description": "Send a new chat message"
+      },
+      "response": []
+    },
+    {
+      "name": "🔄 SSE Connection (Real-time)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}{{apiPath}}/sse?userId={{testUserId}}&username={{testUsername}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{apiPath}}", "sse"],
+          "query": [
+            {
+              "key": "userId",
+              "value": "{{testUserId}}",
+              "description": "User ID for SSE connection"
+            },
+            {
+              "key": "username",
+              "value": "{{testUsername}}",
+              "description": "Username for SSE connection"
+            }
+          ]
+        },
+        "description": "Establish Server-Sent Events connection for real-time updates"
+      },
+      "response": []
+    },
+    {
+      "name": "🌱 Seed Demo Messages",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}{{apiPath}}/seed",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{apiPath}}", "seed"]
+        },
+        "description": "Add demo messages for testing (development only)"
+      },
+      "response": []
+    },
+    {
+      "name": "📤 Send Multiple Test Messages",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{testUserId}}\",\n  \"username\": \"{{testUsername}}\",\n  \"message\": \"Bulk test message #{{$randomInt}} - BTC to the moon! 🚀\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}{{apiPath}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{apiPath}}"]
+        },
+        "description": "Send multiple messages for load testing"
+      },
+      "response": []
+    },
+    {
+      "name": "🔄 SSE Connection (User 2)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}{{apiPath}}/sse?userId=user2&username=SecondUser",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{apiPath}}", "sse"],
+          "query": [
+            {
+              "key": "userId",
+              "value": "user2",
+              "description": "Second user for multi-user testing"
+            },
+            {
+              "key": "username",
+              "value": "SecondUser",
+              "description": "Second username for testing"
+            }
+          ]
+        },
+        "description": "Second SSE connection to test multi-user real-time messaging"
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set dynamic timestamp for messages",
+          "pm.environment.set('timestamp', new Date().toISOString());"
+        ]
+      }
+    }
+  ]
+}

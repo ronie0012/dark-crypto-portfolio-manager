@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1760547287574,
+      "tag": "0000_colossal_thor_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1760548054687,
+      "tag": "0001_good_sway",
+      "breakpoints": true
+    }
+  ]
+}

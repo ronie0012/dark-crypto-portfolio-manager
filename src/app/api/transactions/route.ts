@@ -41,8 +41,6 @@ export async function GET(request: NextRequest) {
     const transactionType = searchParams.get('transactionType');
     const cryptoSymbol = searchParams.get('cryptoSymbol');
 
-    let query = db.select().from(transactions);
-
     const conditions = [];
 
     // Filter by userId
@@ -71,8 +69,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Build query with conditions
+    let query = db.select().from(transactions);
+    
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(and(...conditions)) as typeof query;
     }
 
     const results = await query

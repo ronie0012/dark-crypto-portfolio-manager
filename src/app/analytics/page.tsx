@@ -341,8 +341,8 @@ export default function AnalyticsPage() {
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{transaction.cryptoSymbol}</span>
                             <span className={`text-xs px-2 py-1 rounded ${transaction.transactionType === "buy"
-                                ? "bg-green-500/10 text-green-500"
-                                : "bg-red-500/10 text-red-500"
+                              ? "bg-green-500/10 text-green-500"
+                              : "bg-red-500/10 text-red-500"
                               }`}>
                               {transaction.transactionType.toUpperCase()}
                             </span>

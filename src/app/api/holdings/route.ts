@@ -39,8 +39,6 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const userId = searchParams.get('userId');
 
-    let query = db.select().from(holdings);
-
     // Build where conditions
     const conditions = [];
 
@@ -57,8 +55,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Build query with conditions
+    let query = db.select().from(holdings);
+    
     if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
+      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions)) as typeof query;
     }
 
     const results = await query.limit(limit).offset(offset);

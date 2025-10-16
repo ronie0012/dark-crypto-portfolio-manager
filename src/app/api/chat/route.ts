@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { broadcastMessage } from "@/lib/sse-utils";
 
 // In-memory storage for demo purposes
 // In production, you'd use a database like PostgreSQL, MongoDB, etc.
@@ -118,13 +119,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Import broadcast functions from SSE route
-async function broadcastMessage(message: any) {
-  try {
-    // Call the SSE broadcast function
-    const sseModule = await import('./sse/route');
-    sseModule.broadcastMessage(message);
-  } catch (error) {
-    console.error("Error broadcasting message:", error);
-  }
-}
